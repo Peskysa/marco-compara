@@ -1,0 +1,11 @@
+{
+  "name": "Marco Pescador Compara",
+  "slug": "marco-compara",
+  "author": "Marco Pescador",
+  "version": "0.2.0",
+  "license": "AGPL-3.0-only",
+  "modalities": ["web"],
+  "scope": "Solo aplicación web por indicación expresa del propietario.",
+  "repository": "https://github.com/Peskysa/marco-compara",
+  "website": "https://peskysa.github.io/marco-compara/"
+}
