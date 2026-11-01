@@ -26,7 +26,13 @@ test('Cada comparación conserva evidencia en ambos lados o declara una ausencia
 test('Los PDF servidos son originales y coinciden con los metadatos',()=>{
  for(const d of data.documents){
   const file=path.resolve(root,d.file);assert.ok(file.startsWith(root+path.sep));
-  if(d.party==='VOX'&&!fs.existsSync(file)){assert.ok(d.url.startsWith('https://www.voxespana.es/'));assert.match(d.sha256,/^[a-f0-9]{64}$/);continue;}
+  if(d.party==='VOX'){
+   const original=new URL(d.url);
+   assert.equal(original.protocol,'https:');
+   assert.ok(['voxespana.es','www.voxespana.es'].includes(original.hostname));
+   assert.match(d.sha256,/^[a-f0-9]{64}$/);
+   if(!fs.existsSync(file))continue;
+  }
   const bytes=fs.readFileSync(file);assert.equal(bytes.subarray(0,5).toString(),'%PDF-');
   assert.equal(bytes.length,d.bytes);assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),d.sha256);
   assert.ok(d.rights);assert.ok(d.url.startsWith('https://'));
