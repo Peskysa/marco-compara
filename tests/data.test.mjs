@@ -29,7 +29,7 @@ test('Los PDF servidos son originales y coinciden con los metadatos',()=>{
   if(d.party==='VOX'){
    const original=new URL(d.url);
    assert.equal(original.protocol,'https:');
-   assert.ok(['voxespana.es','www.voxespana.es'].includes(original.hostname));
+   assert.ok(['www.voxespana.es','votaabascal.es'].includes(original.hostname));
    assert.match(d.sha256,/^[a-f0-9]{64}$/);
    if(!fs.existsSync(file))continue;
   }
