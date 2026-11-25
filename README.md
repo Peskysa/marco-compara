@@ -1,48 +1,37 @@
 # Marco Pescador Compara
 
-Aplicación web documental de Marco Pescador. Disponible en [GitHub Pages](https://peskysa.github.io/marco-compara/). Solo web, sin instaladores ni aplicaciones de escritorio o Android, por indicación expresa del propietario.
+Aplicación web documental de Marco Pescador. [Abrir la web](https://peskysa.github.io/marco-compara/) · [Código público](https://github.com/Peskysa/marco-compara).
 
-## Uso
+Compara los dos programas oficiales publicados para las elecciones generales del **29 de noviembre de 2026**: **La Reconstrucción Nacional**, del PP (64 páginas, presentado el 10 de noviembre), y **Es sentido común**, de Vox (66 páginas, presentado el 12 de noviembre). Revisión: **25 de noviembre de 2026**.
 
-Ejecutar `npm start` en esta carpeta y abrir http://127.0.0.1:5197/ en el navegador. Servidor limitado a la interfaz local del ordenador. No requiere dependencias de npm.
+## Comparación
 
-Ofrece tres listas, búsqueda, filtros por tema y edición, detalle con fuentes y descarga de siete PDF originales. No usa cookies ni analítica; las selecciones explícitas permanecen únicamente en el navegador.
+269 fichas: **78 coincidencias**, **2 oposiciones explícitas** y **189 diferencias** de diseño, alcance o compromisos concretos sin equivalente localizado. Se han revisado 241 medidas numeradas con contenido del PP y 115 de Vox. Ocho posiciones del PP están reservadas sin contenido y quedan excluidas: 83, 109, 132, 164, 167, 173, 200 y 210.
 
-## Selecciones y recuento
+Cada ficha cita el número y la página del PDF. Una ficha puede comparar solo un aspecto de una medida compuesta; enlazar una medida no significa que todos sus apartados coincidan. Las notas conservan condiciones y límites. Una ausencia se refiere al compromiso concreto en el programa revisado y no implica oposición ni silencio del partido sobre todo el tema.
 
-En cada ficha se puede marcar PP o Vox pulsando su propuesta. Elegir el otro partido cambia la selección; pulsar de nuevo la elegida la quita. Si no hay propuesta documentada, ese lado no puede seleccionarse. El título y la flecha siguen abriendo las fuentes.
+Las fichas recientes anteriores, basadas en documentos de 2025 y compromisos de precampaña, se han sustituido. No se trasladan porcentajes fiscales, propuestas ni oposiciones de aquellos textos a los programas nuevos. El archivo de 2023 permanece separado, con sus 53 fichas históricas.
 
-El recuento suma literalmente una elección por ficha, sin pesos, porcentajes de afinidad, recomendaciones ni conclusiones políticas. Los filtros no alteran el total. Las ediciones recientes y el archivo histórico tienen selecciones y recuentos separados. Se puede abrir el resumen y quitar selecciones individualmente o borrar las de la edición activa.
+## Uso y selecciones
 
-Las selecciones se guardan en `localStorage`, solo en ese navegador, sin enviarse al servidor. Si el almacenamiento falla, funcionan durante la sesión abierta. Al cargar se descartan registros cuyo partido no sea válido, cuya propuesta no esté documentada o cuyo contenido haya cambiado.
+Busca una propuesta, filtra por tema o categoría y pulsa su título para consultar las fuentes. Todas las fichas se muestran sin paginación. En cada ficha puedes marcar PP o Vox; pulsar de nuevo desmarca y elegir el otro cambia la opción. Una ausencia documental no se puede seleccionar.
 
-## Contenido y alcance
+Ver recuento suma literalmente una elección por ficha, sin pesos, afinidad ni recomendaciones de voto. Los filtros no cambian el total y las ediciones tienen recuentos separados. Las selecciones se guardan solo en ese navegador. Las fichas modificadas o sustituidas no heredan selecciones antiguas; las del archivo histórico se conservan si no han cambiado.
 
-Revisión: **30 de octubre de 2026**. Se han localizado compromisos de PP para el 29N, documentación sectorial y anuncios oficiales nacionales. No se han localizado ambos programas completos de las generales de 2026 en las fuentes revisadas. Los documentos de 2025 se identifican como antecedentes, sin presumir su vigencia electoral automática. El corpus está enumerado en `web/data.json`.
+## Fuentes y PDF
 
-Documentos 2025–2026: **129 propuestas inventariadas** (77 PP y 52 VOX) en cinco PDF revisados íntegramente, con repeticiones fusionadas, y **86 fichas de comparación**. Una ficha puede agrupar varias propuestas y una propuesta compuesta puede aparecer vinculada por un aspecto concreto. No es un inventario exhaustivo de todos los compromisos posibles de los partidos.
+En Documentos están los programas y los enlaces originales. El PDF del PP se ofrece inalterado, con atribución y licencia CC BY-NC 3.0 España. El de Vox se abre desde su servidor oficial y no se redistribuye en GitHub. Los metadatos y SHA-256 están en web/data.json; la copia del PP se descarga y verifica al compilar la web.
 
-Archivo de generales de 2023: dos programas completos (112 y 178 páginas), **746 medidas principales numeradas** (365 PP y 381 VOX) y **53 fichas contrastadas**. Las demás medidas permanecen consultables y señaladas como pendientes de comparación. No se cuentan subapartados como medidas principales adicionales ni se cruzan posiciones del archivo con la edición reciente.
+## Desarrollo y verificación
 
-Los contadores diferencian propuestas inventariadas, fichas comparativas, propuestas vinculadas y pendientes. Las listas muestran todas las fichas de la edición y los filtros elegidos, sin paginación. El inventario completo se conserva en los datos y en investigación; no tiene un apartado propio en la interfaz.
+Solo modalidad web, por instrucción expresa del propietario. HTML, CSS y JavaScript sin dependencias de aplicación. Node.js 24: ejecutar `node scripts/serve.cjs` y abrir http://127.0.0.1:5197/.
 
-Las tres listas distinguen medidas compartidas, posiciones expresas incompatibles, y diferencias de alcance o medidas sin equivalencia localizada en el corpus. La falta de correspondencia no demuestra que un partido carezca de esa propuesta. Coincidir en una medida no implica identidad integral de sus programas ni de las condiciones de aplicación.
+`node scripts/download-2026.mjs` descarga los originales y rechaza cualquier cambio de SHA-256 respecto de la revisión. `node scripts/prepare-2026.mjs` regenera los datos desde data/. `node --test tests/*.test.mjs` verifica datos, cobertura, reservas, referencias, filtros y selecciones. `node scripts/build-web.mjs` prepara dist/ sin copias de Vox ni archivos obsoletos. Las herramientas de investigación y extracción de PDF requieren sus dependencias indicadas; no son necesarias para utilizar la web.
 
-Las páginas citadas corresponden al índice de páginas del PDF (empezando por 1), no a una numeración inferida. La fecha visible es la del documento o del anuncio. Las fechas interiores de las hojas de campaña PP prevalecen sobre la fecha diferente de su nombre de archivo. La edición de VOX es de octubre de 2025, aunque la presentación del programa sectorial se produjo en junio.
+GitHub Actions comprueba y publica main en Pages. Tras un despliegue correcto, publica una versión con web, documentación, fuente del mismo commit y SHA256SUMS.txt. Las capturas y verificaciones visuales no equivalen a una prueba en todos los teléfonos físicos.
 
-## Verificación
+## Privacidad y licencia
 
-`npm test`: integridad, tamaños, hashes SHA-256, referencias, páginas, ediciones, cobertura y secuencia de medidas numeradas. También prueba el renderizado en memoria, filtros, búsqueda y presentación de todas las fichas, sin navegador ni red. No sustituye una revisión visual. Investigación y textos extraídos en `research/`, fuera de la carpeta web servida. Las capturas de `test-output/` anteriores a esta ampliación no documentan esta versión.
+Sin cuentas, publicidad, cookies propias ni analítica. Las selecciones no se envían al servidor. GitHub Pages y los sitios oficiales pueden registrar datos técnicos de las visitas conforme a sus políticas. Código y gráficos originales: **AGPL-3.0-only**. Los documentos y marcas de terceros quedan excluidos. Véanse NOTICE y THIRD_PARTY.md.
 
-## Desarrollo y publicación
-
-HTML, CSS y JavaScript sin herramientas de compilación. `npm run prepare` reúne la revisión actual, las correspondencias del archivo y los inventarios; genera datos y copias locales sin modificar los PDF. Cada documento contiene autoría, enlace original, fecha, alcance, páginas y SHA-256. Los textos íntegros extraídos quedan solo en investigación; la web sirve fichas propias breves y referencias.
-
-El repositorio público es [Peskysa/marco-compara](https://github.com/Peskysa/marco-compara). Actions ejecuta las pruebas, prepara `dist/` con `node scripts/build-web.mjs` y publica en GitHub Pages. Los PDF de VOX no se suben al repositorio ni al alojamiento: se abren desde el servidor oficial. Las copias de PP conservan atribución y licencia. El uso de GitHub Pages puede generar registros técnicos del proveedor; no se transmiten selecciones.
-
-La publicación no requiere los archivos de investigación: `web/data.json` es la instantánea documental versionada. `npm run prepare` es una herramienta de investigación del autor y necesita sus archivos locales excluidos de Git.
-
-## Licencia
-
-Código y gráficos originales: **AGPL-3.0-only**. Documentos de terceros, nombres y marcas quedan excluidos. Véanse `NOTICE` y `THIRD_PARTY.md`.
-
+Autor: Marco Pescador. [Manual](docs/MANUAL.md) · [Desarrollo](docs/DESARROLLO.md) · [Privacidad](docs/PRIVACIDAD.md) · [Historial](CHANGELOG.md).

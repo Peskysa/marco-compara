@@ -86,3 +86,12 @@ test('Sin almacenamiento permite seleccionar e informa de la limitación',async(
  const{ui,e}=await start(new Map(),true);const i=data.items.find(i=>i.edition==='actual'&&!i.pp.absent);
  ui.chooseParty(i.id,'PP');assert.equal(ui.counts().pp,1);assert.match(e.get('selection-storage').textContent,/mientras esta página siga abierta/);
 });
+
+test('No traslada elecciones de fichas antiguas a los programas completos',async()=>{
+ const store=new Map([['marco-pescador-compara:selecciones:v1',JSON.stringify({version:1,selections:{'actual-001':{party:'PP',fingerprint:'contenido de precampaña'}}})]]);
+ const{ui,e}=await start(store);
+ assert.equal(ui.counts().selected,0);
+ assert.match(e.get('selection-storage').textContent,/selecciones anteriores no se trasladan/);
+ assert.match(e.get('document-context').innerHTML,/Programas oficiales completos/);
+ assert.ok(!e.get('document-grid').innerHTML.includes('Programa-WEB-021025'));
+});

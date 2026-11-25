@@ -12,6 +12,7 @@ let edition='actual';
 let returnFocus;
 let choices={};
 let canStoreChoices=true;
+let outdatedChoices=0;
 const CHOICE_STORAGE='marco-pescador-compara:selecciones:v1';
 const date = value => value.length===7 ? new Intl.DateTimeFormat('es-ES',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(value+'-01T12:00:00Z')) : new Intl.DateTimeFormat('es-ES',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'));
 const sourceById = id => data.sources.find(s=>s.id===id);
@@ -28,6 +29,7 @@ function loadChoices(){
     const saved=JSON.parse(localStorage.getItem(CHOICE_STORAGE)||'null');
     if(saved?.version!==1||!saved.selections||typeof saved.selections!=='object')return;
     for(const i of data.items){const c=saved.selections[i.id];if(c&&['PP','VOX'].includes(c.party)&&c.fingerprint===fingerprint(i)&&!i[c.party.toLowerCase()].absent)choices[i.id]=c;}
+    outdatedChoices=Object.keys(saved.selections).filter(id=>!choices[id]).length;
   }catch{canStoreChoices=false;}
 }
 function saveChoices(){try{localStorage.setItem(CHOICE_STORAGE,JSON.stringify({version:1,selections:choices}));canStoreChoices=true;}catch{canStoreChoices=false;}}
@@ -50,6 +52,7 @@ function renderSelections(){
   $('#selection-list').innerHTML=selectedListHtml();
   $('#clear-selections').disabled=counts.selected===0;
   $('#selection-storage').textContent=canStoreChoices?'Tus selecciones se guardan solo en este navegador. No se envían al servidor.':'El navegador no permite guardar las selecciones. Se conservarán mientras esta página siga abierta.';
+  if(outdatedChoices)$('#selection-storage').textContent+=` ${outdatedChoices} selecciones anteriores no se trasladan porque sus fichas han cambiado.`;
 }
 function chooseParty(id,party){
   const i=data.items.find(i=>i.id===id);
@@ -63,12 +66,12 @@ function partyChoice(i,party){
   const side=i[party.toLowerCase()],selected=choices[i.id]?.party===party,label=party==='VOX'?'Vox':party;
   return `<button class="row-side choice-button choice-${party.toLowerCase()}${selected?' chosen':''}" data-choice="${i.id}" data-party="${party}" aria-pressed="${selected}" aria-label="${side.absent?'Sin propuesta seleccionable de':'Seleccionar'} ${label} en la ficha ${esc(i.displayNumber)}: ${esc(i.title)}"${side.absent?' disabled':''}><span class="party-name ${party.toLowerCase()}">${label}</span>${esc(side.text)}<span class="row-meta">${refLabel(side)}</span><span class="choice-hint">${side.absent?'Sin propuesta documentada':selected?'✓ Seleccionada · pulsa para quitar':'○ Seleccionar '+label}</span></button>`;
 }
-function refLabel(side){const source=sourceById(side.source);return side.absent?'Corpus revisado · sin equivalencia localizada':`${source.date.slice(0,4)} · ${side.page?'PDF, pág. '+side.page:'Anuncio oficial'}`;}
+function refLabel(side){const source=sourceById(side.source);return side.absent?'Programa revisado · sin equivalencia localizada':`${source.date.slice(0,4)} · ${side.section&&side.measureIds?.length===1?side.section+' · ':''}${side.page?'PDF, pág. '+side.page:'Anuncio oficial'}`;}
 function renderSummary(){
   const selected=editionItems();
   $('#summary-grid').innerHTML=Object.entries(groups).map(([key,g])=>{const count=selected.filter(i=>i.category===key).length;return `<button class="summary-card" data-filter="${key}" aria-label="${g.short}: ${count} ${count===1?'ficha':'fichas'}"><span class="summary-top"><span class="summary-icon" aria-hidden="true">${g.icon}</span><span class="summary-number">${String(count).padStart(2,'0')}</span></span><span class="summary-title">${g.title}</span><span class="summary-text">${g.description}</span></button>`;}).join('');
   const inv=editionInventory(),covered=coveredIds();
-  $('#coverage-bar').innerHTML=`<span><strong>${selected.length}</strong> fichas de comparación</span><span><strong>${inv.length}</strong> propuestas inventariadas</span><span><strong>${covered.size}</strong> propuestas vinculadas a fichas</span>`;
+  $('#coverage-bar').innerHTML=`<span><strong>${selected.length}</strong> fichas de comparación</span><span><strong>${inv.length}</strong> medidas numeradas revisadas</span><span><strong>${covered.size}</strong> medidas vinculadas a fichas</span>`;
 }
 function setCategory(value){category=value;document.querySelectorAll('.filter-tab').forEach(b=>{b.classList.toggle('active',b.dataset.filter===category);b.setAttribute('aria-pressed',String(b.dataset.filter===category));});renderItems();}
 function renderItems(){
@@ -86,7 +89,7 @@ function renderItems(){
 function renderDocuments(){
   $('#document-grid').innerHTML=editionDocs().map(d=>`<article class="document-card"><div class="doc-top"><span class="party party-${d.party.toLowerCase()}">${d.party}</span><span class="doc-year">${d.date.slice(0,4)} · PDF ORIGINAL</span></div><h3>${esc(d.title)}</h3><span class="doc-kind">${esc(d.kind)}</span><p class="doc-description">${esc(d.description)}</p><div class="doc-meta"><time datetime="${d.date}">${date(d.date)}</time><span>·</span><span>${d.pages} ${d.pages===1?'página':'páginas'}</span><span>·</span><span>${new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format(d.bytes/1000000)} MB</span></div><div class="doc-actions"><a class="download-link" href="${docHref(d)}" ${d.party==='VOX'?'target="_blank" rel="noopener noreferrer"':'download="'+d.file.split('/').pop()+'"'} aria-label="Descargar PDF: ${esc(d.title)}">${d.party==='VOX'?'Abrir PDF oficial':'Descargar PDF'} <span aria-hidden="true">↓</span></a><a class="original-link" href="${d.url}" target="_blank" rel="noopener noreferrer" aria-label="Fuente original: ${esc(d.title)}">Original ↗</a></div><small class="doc-hash" title="SHA-256 completo: ${d.sha256}">SHA-256 ${d.sha256.slice(0,16)}… <span>· ${d.party==='VOX'?'Archivo en servidor oficial':'Copia sin modificar'}</span></small><small class="doc-hash">${d.party==='PP'?'Autor: Partido Popular · <a href="https://creativecommons.org/licenses/by-nc/3.0/es/" target="_blank" rel="noopener noreferrer">CC BY-NC 3.0 España</a>':'Autor: VOX · derechos reservados'}</small></article>`).join('');
   $('#source-links').innerHTML=data.sources.filter(s=>!docById(s.id)&&(s.edition===edition||s.party==='BOE')).map(s=>`<div><a href="${s.url}" target="_blank" rel="noopener noreferrer">${esc(s.party)} · ${esc(s.title)} ↗</a><small>${date(s.date)} · ${esc(s.scope)}</small></div>`).join('');
-  $('#document-context').innerHTML=edition==='actual'?'<strong>Programas completos del 29N: no localizados en esta revisión.</strong> Estos son los compromisos y antecedentes sectoriales disponibles, con su fecha original.':'<strong>Archivo histórico · Elecciones generales del 23 de julio de 2023.</strong> Dos programas completos, de 112 y 178 páginas. Su inclusión no les atribuye vigencia para las elecciones de 2026.';
+  $('#document-context').innerHTML=edition==='actual'?`<strong>Programas oficiales completos del 29N de 2026.</strong> PP: 64 páginas · VOX: 66 páginas. ${data.reservations?.length?`${data.reservations.length} posiciones numeradas del PP están reservadas sin propuesta y se excluyen de las selecciones.`:''}`:'<strong>Archivo histórico · Elecciones generales del 23 de julio de 2023.</strong> Dos programas completos, de 112 y 178 páginas. Su inclusión no les atribuye vigencia para las elecciones de 2026.';
 }
 function selectEdition(){
  edition=$('#edition').value;category='all';$('#search').value='';
@@ -98,11 +101,13 @@ function selectEdition(){
 }
 function openDialog(title,eyebrow,html){if(!$('#detail-dialog').open)returnFocus=document.activeElement;$('#dialog-title').textContent=title;$('#dialog-eyebrow').textContent=eyebrow;$('#dialog-body').innerHTML=html;if(!$('#detail-dialog').open)$('#detail-dialog').showModal();$('#dialog-close').focus();}
 function evidence(party,side){
-  if(side.absent)return `<article class="evidence-card"><span class="party party-${party.toLowerCase()}">${party}</span><p>Medida equivalente no localizada.</p><small>Solo en este corpus: ${side.corpus.map(id=>esc(sourceById(id).title)+' ('+sourceById(id).date.slice(0,4)+')').join('; ')}.</small><small>Esto no prueba que el partido no la proponga. La documentación disponible es parcial.</small></article>`;
+  if(side.absent)return `<article class="evidence-card"><span class="party party-${party.toLowerCase()}">${party}</span><p>Medida equivalente no localizada.</p><small>Solo en este corpus: ${side.corpus.map(id=>esc(sourceById(id).title)+' ('+sourceById(id).date.slice(0,4)+')').join('; ')}.</small><small>Esta ausencia se refiere al programa revisado. No significa que el partido se oponga ni describe todas sus posiciones públicas.</small></article>`;
   const s=sourceById(side.source),d=docById(side.source);
-  return `<article class="evidence-card"><span class="party party-${party.toLowerCase()}">${party}</span><p>${esc(side.text)}</p><small>${esc(s.title)}<br>${date(s.date)} · ${esc(s.scope)}<br>${side.page?`Página ${side.page} del PDF · `:''}${esc(side.section)}</small>${(side.measureIds||[]).map(id=>{const m=data.inventory.find(i=>i.id===id);return m?`<button class="quiet-button" data-inventory="${esc(id)}">Ver ficha de la medida ${esc(m.number||m.section)} · pág. ${m.page}</button>`:'';}).join('')}<a class="text-link" href="${d?docHref(d,side.page):s.url}" target="_blank" rel="noopener noreferrer">${d?'Abrir PDF en la página':'Leer anuncio oficial'} ↗</a>${d?`<a class="original-link" href="${s.url}${side.page?'#page='+side.page:''}" target="_blank" rel="noopener noreferrer">Consultar el original del partido ↗</a>`:''}</article>`;
+  const furtherPages=(side.pages||[]).filter(p=>p!==side.page);
+  const morePages=d&&furtherPages.length?`<small>Otras páginas de las medidas citadas: ${furtherPages.map(p=>`<a href="${docHref(d,p)}" target="_blank" rel="noopener noreferrer">${p}</a>`).join(' · ')}</small>`:'';
+  return `<article class="evidence-card"><span class="party party-${party.toLowerCase()}">${party}</span><p>${esc(side.text)}</p><small>${esc(s.title)}<br>${date(s.date)} · ${esc(s.scope)}<br>${side.page?`Página ${side.page} del PDF · `:''}${esc(side.section)}</small>${morePages}${(side.measureIds||[]).map(id=>{const m=data.inventory.find(i=>i.id===id);return m?`<button class="quiet-button" data-inventory="${esc(id)}">Ver ficha de la medida ${esc(m.number||m.section)} · pág. ${m.page}</button>`:'';}).join('')}<a class="text-link" href="${d?docHref(d,side.page):s.url}" target="_blank" rel="noopener noreferrer">${d?'Abrir PDF en la página':'Leer anuncio oficial'} ↗</a>${d?`<a class="original-link" href="${s.url}${side.page?'#page='+side.page:''}" target="_blank" rel="noopener noreferrer">Consultar el original del partido ↗</a>`:''}</article>`;
 }
-function openItem(id){const i=data.items.find(i=>i.id===id);openDialog(i.title,groups[i.category].title+' · '+i.topic,`<p class="dialog-note">${esc(i.note)}</p><div class="evidence-grid">${evidence('PP',i.pp)}${evidence('VOX',i.vox)}</div><p class="dialog-date">Clasificación editorial · Revisado el 30 de octubre de 2026 · Resúmenes propios; las fuentes contienen el texto íntegro. La fecha de cada documento es parte de la comparación.</p>`);}
+function openItem(id){const i=data.items.find(i=>i.id===id);openDialog(i.title,groups[i.category].title+' · '+i.topic,`<p class="dialog-note">${esc(i.note)}</p><div class="evidence-grid">${evidence('PP',i.pp)}${evidence('VOX',i.vox)}</div><p class="dialog-date">Clasificación editorial · Revisado el ${date(data.reviewed)} · Resúmenes propios; las fuentes contienen el texto íntegro. La fecha de cada documento es parte de la comparación.</p>`);}
 function reset(){category='all';$('#search').value='';$('#topic').value='all';setCategory('all');}
 document.addEventListener('click',event=>{
   const choice=event.target.closest('[data-choice]');if(choice){const id=choice.dataset.choice,party=choice.dataset.party;chooseParty(id,party);document.querySelector(`[data-choice="${id}"][data-party="${party}"]`)?.focus({preventScroll:true});return;}

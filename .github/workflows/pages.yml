@@ -16,8 +16,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - run: node scripts/download-2026.mjs
       - run: node --test tests/*.test.mjs
       - run: node scripts/build-web.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-verificada
+          path: dist
+          include-hidden-files: true
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -34,3 +40,25 @@ jobs:
     steps:
       - uses: actions/deploy-pages@v4
         id: deployment
+  release:
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-verificada
+          path: dist
+      - run: python scripts/package-release.py
+      - name: Publicar versión web
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "'v'+require('./package.json').version")
+          if gh release view "$version" >/dev/null 2>&1; then
+            printf 'La versión ya existe; se conserva sin reemplazar.\n'
+          else
+            gh release create "$version" release/*.zip release/SHA256SUMS.txt --target "$GITHUB_SHA" --title "Marco Pescador Compara $version" --notes-file docs/RELEASE.md
+          fi

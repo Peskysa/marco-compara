@@ -44,7 +44,10 @@ test('Los documentos antiguos no aparecen como programas de las generales de 202
   assert.ok(d.date<=data.reviewed);
  }
  assert.match(data.scope,/no exhaustivo/);
- assert.match(data.scope,/No localizados/);
+ const current=data.documents.filter(d=>d.edition==='actual');
+ assert.equal(current.length,2);
+ assert.deepEqual(current.map(d=>d.id).sort(),['pp-2026','vox-2026']);
+ assert.ok(current.every(d=>d.kind==='Programa electoral · Generales 29N 2026'));
 });
 test('Inventario, comparaciones y fuentes conservan la misma edición',()=>{
  const ids=new Set();
@@ -73,4 +76,28 @@ test('La cobertura informa pendientes reales y no equipara inventario a comparac
   assert.ok(e.linked<=e.inventory);
  }
  assert.ok(data.items.filter(i=>i.edition==='actual').length>25);
+});
+
+test('Todos los números de 2026 quedan revisados y los reservados no son seleccionables',()=>{
+ const pp=data.inventory.filter(i=>i.source==='pp-2026'),vox=data.inventory.filter(i=>i.source==='vox-2026');
+ assert.equal(pp.length,241);assert.equal(vox.length,115);
+ assert.deepEqual(data.reservations.map(r=>r.number).sort((a,b)=>a-b),[83,109,132,164,167,173,200,210]);
+ assert.deepEqual([...pp.map(i=>i.number),...data.reservations.map(i=>i.number)].sort((a,b)=>a-b),Array.from({length:249},(_,i)=>i+1));
+ assert.deepEqual(vox.map(i=>i.number).sort((a,b)=>a-b),Array.from({length:115},(_,i)=>i+1));
+ const linked=new Set(data.items.filter(i=>i.edition==='actual').flatMap(i=>[...i.pp.measureIds,...i.vox.measureIds]));
+ for(const m of [...pp,...vox])assert.ok(linked.has(m.id),'Medida sin revisar: '+m.id);
+ for(const i of data.items.filter(i=>i.edition==='actual'))for(const [party,side]of [['pp',i.pp],['vox',i.vox]]){
+  if(side.absent){assert.deepEqual(side.corpus,[party+'-2026']);continue;}
+  assert.equal(side.source,party+'-2026');
+  assert.ok(side.measureIds.every(id=>!data.reservations.some(r=>id==='pp-2026-'+String(r.number).padStart(3,'0'))));
+  const ms=side.measureIds.map(id=>data.inventory.find(m=>m.id===id));
+  assert.ok(ms.some(m=>m.pages.includes(side.page)),'Página fuera de la medida en '+i.id);
+ }
+});
+
+test('Las oposiciones actuales se limitan a decisiones explícitas de los programas nuevos',()=>{
+ const rows=data.items.filter(i=>i.edition==='actual'&&i.category==='contrarios');
+ assert.equal(rows.length,2);
+ assert.ok(rows.every(i=>!i.pp.absent&&!i.vox.absent));
+ assert.ok(!data.items.filter(i=>i.edition==='actual').some(i=>/eliminar el Estado autonómico|15\/25|18\/8/.test(i.vox.text)));
 });

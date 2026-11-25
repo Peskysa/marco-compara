@@ -1,6 +1,6 @@
 {
   "name": "marco-compara",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Comparador documental web de propuestas oficiales de PP y VOX.",
   "author": "Marco Pescador",
@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/serve.cjs",
-    "prepare": "node scripts/complete-current.mjs && node scripts/archive-comparisons.mjs && node scripts/prepare-data.mjs",
+    "prepare": "node scripts/prepare-2026.mjs",
     "test": "node --test tests/*.test.mjs",
     "build": "node scripts/build-web.mjs"
   },
